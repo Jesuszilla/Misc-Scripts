@@ -2,7 +2,6 @@
 # Region parsing for MUGEN
 # bv Jesuszilla
 # http://www.trinitymugen.net
-from ast import List
 import io
 import os
 import re
@@ -17,6 +16,7 @@ subdirectories = ['cvscommon', 'overrides']
 # Enter your files to copy completely from the subdirectory here and their directory to copy to.
 copyFiles = {
     'cvscommon/cvssystem.lol': '../',
+    'cvscommon/point.lol': '../'
 }
 
 # Region searches
@@ -27,8 +27,8 @@ tagEnd = re.compile('\s*;#endregion')
 # Files to exempt. Do not fuck with this unless you know what you're doing. You have been warned.
 fileExemptions = ['.sff', '.act', '.snd', '.7z', '.rar', '.lzh', '.dgc', '.zip', '.png', '.gif', '.jpg', '.jpeg', '.pcx', '.bat',
                   '.bin', '.sh', '.gitmodules', '.gitignore', '.py', '.exe', '.pl', '.perl', '.java', '.jar', '.pyc', '.c', '.cpp',
-                   '.cs', '.c++', '.wav', '.mp3', '.ogg', '.h', '.hpp', '.m', '.tar', '.gz', '.afs', '.pak', '.webm', '.a', '.mp4',
-                   '.avi', '.mpg', '.mpeg', '.psd']
+                  '.cs', '.c++', '.wav', '.mp3', '.ogg', '.h', '.hpp', '.m', '.tar', '.gz', '.afs', '.pak', '.webm', '.a', '.mp4',
+                  '.avi', '.mpg', '.mpeg', '.psd']
 
 # Folders to exempt. It's best not to fuck with this, either.
 folderExemptions = ['.git']
@@ -39,6 +39,9 @@ isBinaryString = lambda bytes: bool(bytes.translate(None, textChars))
 
 # Parse the damn regions. This will be recursive.
 def parseRegion(filename, excludeList):
+    newList = [i for i in excludeList]
+    newList.append(filename)
+
     # We're gonna be doing a LOT of appending.
     # Start keeping track of the region
     regionDepth = 0
@@ -56,21 +59,21 @@ def parseRegion(filename, excludeList):
                     regionDepth += 1
                     if regionDepth == 1:
                         newContents.extend(bytearray(line, 'utf8'))
-                        excludeList.append(filename)
-                    shouldBreak = False
-                    for directory in directories:
-                        for subdirectory in subdirectories:
-                            try:
-                                replacement = parseRegion(os.path.join(directory, subdirectory, firstRegion.search(line).group().strip()), excludeList)
-                                if len(replacement) > 0:
-                                    newContents.extend(replacement)
-                                    newContents.extend(bytearray('\n', 'utf8'))
-                                    shouldBreak = True
-                                    break
-                            except Exception as e:
-                                continue
-                        if shouldBreak:
-                            break
+                        shouldBreak = False
+                        for directory in directories:
+                            for subdirectory in subdirectories:
+                                try:
+                                    innerPath = os.path.join(directory, subdirectory, firstRegion.search(line).group().strip())
+                                    replacement = parseRegion(innerPath, newList)
+                                    if len(replacement) > 0:
+                                        newContents.extend(replacement)
+                                        newContents.extend(bytearray('\n', 'utf8'))
+                                        shouldBreak = True
+                                        break
+                                except Exception as e:
+                                    continue
+                            if shouldBreak:
+                                break
                 # If we're down a few levels, don't record because we're reading from a file.
                 elif regionDepth > 0:
                     if tagEnd.match(line):
