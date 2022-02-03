@@ -80,7 +80,7 @@ def parseRegion(filename, excludeList):
                 elif regionDepth == 0:
                     newContents.extend(bytearray(line, 'utf8'))
             return newContents
-        return bytearray()
+    return bytearray()
 
 # Get the basepaths for easier searching
 baseCopyFiles = [os.path.basename(f) for f in copyFiles if os.path.splitext(f)[1].lower() not in fileExemptions]
