@@ -112,5 +112,5 @@ for directory in directories:
                         print('Done writing {0}!\n'.format(filename))
             # Fuck 'em
             except Exception as e:
-                print('Error with {}: {}'.format(filename, e.__str__))
+                print('Error with {}: {}'.format(filename, str(e)))
                 continue
