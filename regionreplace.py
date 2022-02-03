@@ -2,9 +2,7 @@
 # Region parsing for MUGEN
 # bv Jesuszilla
 # http://www.trinitymugen.net
-import io
-import os
-import re
+import io, os, re
 
 # Enter relative (or absolute, if you wish) directory path here. This is where files
 # to replace will be.
@@ -13,8 +11,17 @@ directories = ['../']
 # Enter your system subdirectories here. This is where replacement files will come from.
 subdirectories = ['cvscommon', 'overrides']
 
-# Enter your files to copy completely from the subdirectory here and their directory to copy to.
-copyFiles = {
+# Enter your post-update copy files here. These files will be copied completely from the
+# subdirectory into the specified directory before all replacements have occurred, meaning
+# that replacement operations will still occur on them.
+preCopyFiles = {
+    'cvscommon/config.txt': '../'
+}
+
+# Enter your post-update copy files here. These files will be copied completely from the
+# subdirectory into the specified directory with no replacement operations occurring on
+# them.
+postCopyFiles = {
     'cvscommon/cvssystem.lol': '../',
     'cvscommon/point.lol': '../'
 }
@@ -36,6 +43,8 @@ folderExemptions = ['.git']
 # Don't fuck with this
 textChars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
 isBinaryString = lambda bytes: bool(bytes.translate(None, textChars))
+
+BOM_UTF8 = bytearray('\ufeff', 'utf8')
 
 # Parse the damn regions. This will be recursive.
 def parseRegion(filename, excludeList):
@@ -66,6 +75,8 @@ def parseRegion(filename, excludeList):
                                     innerPath = os.path.join(directory, subdirectory, firstRegion.search(line).group().strip())
                                     replacement = parseRegion(innerPath, newList)
                                     if len(replacement) > 0:
+                                        while replacement.startswith(BOM_UTF8):
+                                            replacement = replacement.removeprefix(BOM_UTF8)
                                         newContents.extend(replacement)
                                         newContents.extend(bytearray('\n', 'utf8'))
                                         shouldBreak = True
@@ -86,24 +97,39 @@ def parseRegion(filename, excludeList):
     return bytearray()
 
 # Get the basepaths for easier searching
-baseCopyFiles = [os.path.basename(f) for f in copyFiles if os.path.splitext(f)[1].lower() not in fileExemptions]
-print('AAAAAAAAAAGH: {}'.format(str(baseCopyFiles)))
+basePreCopyFiles = [os.path.basename(f) for f in preCopyFiles if os.path.splitext(f)[1].lower() not in fileExemptions]
+basePostCopyFiles = [os.path.basename(f) for f in postCopyFiles if os.path.splitext(f)[1].lower() not in fileExemptions]
 # Go over each directory
 for directory in directories:
     # Go over every goddamn file in the directory.
     for filename in os.listdir(directory):
         # Copy the entire file if it's in copyFiles.
         strippedFilename = filename.strip()
-        if strippedFilename in baseCopyFiles:
+        if strippedFilename in basePostCopyFiles:
             print(strippedFilename)
-            for copyFile in copyFiles:
+            for copyFile in postCopyFiles:
                 if strippedFilename in copyFile:
-                    with io.open(copyFiles[copyFile] + strippedFilename, 'w+', encoding='utf8') as file:
-                        with io.open(copyFiles[copyFile] + copyFile, 'r', encoding='utf8') as copy:
+                    with io.open(os.path.join(postCopyFiles[copyFile], strippedFilename), 'w+', encoding='utf8') as file:
+                        with io.open(os.path.join(postCopyFiles[copyFile], copyFile), 'r', encoding='utf8') as copy:
                             file.seek(0)
                             file.write(copy.read())
                             file.truncate()
                             print('Overwrote {}\n'.format(os.path.basename(file.name)))
+                    break
+        elif strippedFilename in basePreCopyFiles:
+            print(strippedFilename)
+            for copyFile in preCopyFiles:
+                if strippedFilename in copyFile:
+                    newContents = parseRegion(os.path.join(preCopyFiles[copyFile], copyFile), [])
+                    debugStr = str(newContents, encoding='utf8')
+                    if newContents:
+                        with io.open(os.path.join(preCopyFiles[copyFile], strippedFilename), 'w+', encoding='utf8') as file:
+                            file.seek(0)
+                            file.write(newContents.decode('utf-8'))
+                            file.truncate()
+                            print('Overwrote {}\n'.format(os.path.basename(file.name)))
+                    break
+
         elif filename != os.path.basename(__file__) and os.path.splitext(filename)[1].lower() not in fileExemptions and \
         filename not in fileExemptions and filename not in folderExemptions and not os.path.isdir(os.path.join(directory, filename)):
             try:

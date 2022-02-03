@@ -7,7 +7,7 @@ subrepo in your character with common system files.
 
 ## Installation
 Replace the contents of your system repo's git hooks `pre-commit` file (located in `.git/hooks`) with the contents of RegionReplace.py, set up your `directories`, 
-`subdirectories`, and `copyFiles` variables, and then save.
+`subdirectories`, `preCopyFiles`, and `postCopyFiles` variables, and then save.
 
 ## Usage
 Suppose your project has the following structure:
