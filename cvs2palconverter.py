@@ -68,7 +68,7 @@ def main():
         # We're done with the file, now close it.
         pak.close()
 
-        print palette
+        print(palette)
 
 if __name__ == "__main__":
     main()
