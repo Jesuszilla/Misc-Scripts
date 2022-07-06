@@ -1,8 +1,5 @@
 import sys
-base = "{0},{1}, {2},{3}, {4}\n"
-baseopt1 = "{0},{1}, {2},{3}, {4}, {5}\n"
-baseopt2 = "{0},{1}, {2},{3}, {4}, {5}, {6}\n"
-
+from charset_normalizer import from_path
 
 def main():
 	if len(sys.argv) != 3:
@@ -13,13 +10,16 @@ def main():
 
 	def split(s, n):
 		return (s.split() + [None] * n)[:n]
-		
-	with open(input,"r") as f:
-		with open(output,"w") as f1:
-			lineNo = 1
-			for line in f:
+
+	results = from_path(input)
+
+	lines = str(results.best()).splitlines()
+	with open(output,"w") as f1:
+		lineNo = 1
+		for line in lines:
+			if len(line) > 0:
 				if line[0].isdigit() == False and line[0] != '-':
-					# Not CLSN data, so it's begin action, comment, or loopstart.
+					# Not 
 					if line[0] not in ('[', ';', 'l', 'L', '\n', '\r'):
 						# Convert to lowercase and strip whitespace from the left for easy parsing.
 						linelower = line.lower().lstrip()
@@ -37,7 +37,7 @@ def main():
 								linesToWrite.append(f"Problem at line {lineNo}: height is not even ({h_y} px)\r\n")
 							if len(linesToWrite) > 0:
 								f1.writelines(linesToWrite)
-				lineNo = lineNo + 1
+			lineNo = lineNo + 1
 
 
 if __name__ == "__main__":
