@@ -1,6 +1,9 @@
 # Misc-Scripts
 Miscellaneous Scripts I use for work.
 
+## Prerequisites
+Run `pip3 install -r requirements.txt` in your terminal in this folder to install the prerequisites globally. This will allow you to use the scripts in this repository in any directory on your machine. If you intend to use a virtualenv, you may skip this step.
+
 # RegionReplace.py
 This is meant to be run as a Git pre-commit hook to replace specified regions in your M.U.G.E.N CNS scripts when you have common system files. This assumes you have a
 subrepo in your character with common system files.
